@@ -39,7 +39,7 @@ namespace ServiceRepository
             serviceRepositoryBinding.MaxBufferSize = MaxBufferSize;
             serviceRepositoryBinding.MaxBufferPoolSize = MaxBufferPoolSize;
             serviceRepositoryBinding.MaxReceivedMessageSize = MaxReceivedMessageSize;
-            //serviceRepositoryBinding.ReceiveTimeout = ReceiveTimeout;
+            //serviceRepositoryBinding.ReceiveTimeout = ReceiveTimeout; 
             //serviceRepositoryBinding.SendTimeout = new System.TimeSpan(1, 0, 0);
 
             sh.AddServiceEndpoint(typeof(IServiceRepository), serviceRepositoryBinding, ServiceURI);

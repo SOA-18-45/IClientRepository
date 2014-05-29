@@ -20,7 +20,7 @@ namespace IClientRepository
                 {
                     var configuration = new Configuration();
                     configuration.Configure();
-                    configuration.AddAssembly(typeof(ClientRepo2).Assembly);
+                    configuration.AddAssembly(typeof(Clients).Assembly);
                     _sessionFactory = configuration.BuildSessionFactory();
                 }
                 return _sessionFactory;

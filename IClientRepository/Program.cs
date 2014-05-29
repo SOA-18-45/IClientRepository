@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using NHibernate.Cfg;
-using IClientRepository.Domain;
 using NHibernate.Tool.hbm2ddl;
 using log4net;
 using log4net.Repository.Hierarchy;
@@ -11,21 +10,29 @@ using System.ServiceModel;
 using Contracts;
 using System.ServiceModel.Description;
 using System.Timers;
+using IClientRepository.Domain;
 
 namespace IClientRepository
 {
     class Program
     {
-        public const string serviceAddress = "net.tcp://localhost:54390/IClientRepository";
+        public const string serviceAddress = "net.tcp://localhost:50000/IClientRepository";
         public const string serviceRepositoryAddress = "net.tcp://localhost:11900/IServiceRepository";
         public const string serviceName = "IClientRepository";
-       // public const string ipAddress = "localhost";
         public static IServiceRepository repository { get; set; }
+        public static IAccountRepository repository2 { get; set; }
+
         static void Main(string[] args)
         {
-              //Logger
+            LoadHibernateCfg();
+            ClientRepository test = new ClientRepository();
+            //test.ShowAll(); tylo dla lista 
+            //ClientRepo wynik = test.GetClientInformationByName("Wojtek", "Popaprany");
+            //Console.WriteLine(wynik.IdClient);
+            //test.ShowAll(); 
+            //Logger
             log4net.Config.XmlConfigurator.Configure();
-
+            
             //Configuration
             ClientRepository accountRep = new ClientRepository();
             ServiceHost sh = new ServiceHost(accountRep, new Uri[] { new Uri(serviceAddress) });
@@ -41,70 +48,45 @@ namespace IClientRepository
             repository = cf.CreateChannel();
             Logger.Info("Connection with IServiceRepository completed!");
             var timer = new System.Threading.Timer(e => imAlive(repository), null, TimeSpan.Zero, TimeSpan.FromSeconds(5));
-          
-            repository.registerService(serviceName, serviceAddress.Replace("localhost", serviceName));
+
+            repository.registerService(serviceName, serviceAddress.Replace(serviceRepositoryAddress, serviceName));
             Logger.Info("Service registered!");
 
+            //Przykładowe korzystanie z IAccountRepository
+            /*
+            //pobieranie adresu z servicerepository
+            string accountAdress = repository.getServiceAddress("AccountRepository");
 
-            //Send info for IServiceRepository
-            AliveSignal();
-            Logger.Info("Alive");
-
-
-            //Sending information that service is alive every 10 minutes
-            Timer t = new Timer(600000);
-            t.AutoReset = true;
-            t.Elapsed += new System.Timers.ElapsedEventHandler(Alive);
-            t.Start();
-
-
+            ChannelFactory<IAccountRepository> cf2 = new ChannelFactory<IAccountRepository>(new NetTcpBinding(SecurityMode.None), accountAdress);
+            repository2 = cf2.CreateChannel();
+            Logger.Info("Connection with accountRepository completed!");
+            Guid clientId = new Guid();
+            AccountDetails details = new AccountDetails();
+            Console.WriteLine(repository2.CreateAccount(clientId, details));
+            */
             //Click to close service
             Console.ReadLine();
 
-
-            //Unregisted service from IServiceRepository
-            repository.unregisterService(serviceName);
-
             //Service closing
             Logger.Info("IClientRepository closing!");
-
-
-           /*
-            ClientRepository repo = new ClientRepository();
-            
-            //CREATE!
-           var MikeAbyss = new Client { Name = "Wojciech2", Lastname = "Zięba", PESEL = "9201081223", address = "Sandomierz" };
-           Guid dupa =  repo.CreateClient(MikeAbyss);
-           Console.WriteLine(dupa);
-          /*  //read
-            Client client = repo.GetClientInformationByName("MikeAbyss","700");
-
-
-            //delete
-            client.Name = "MikeAbyss";
-            client.Lastname = "700";
-            repo.RemoveClientByName(client);
-            */
             Console.Read();
-        }
-        private static void Alive(object sender, System.Timers.ElapsedEventArgs e)
-        {
-            AliveSignal();
         }
 
         private static void imAlive(IServiceRepository serviceRepository)
         {
-            serviceRepository.isAlive("net.tcp://localhost:11900/IServiceRepository");
-            Console.WriteLine("Wysyłanie sygnału IamAlive");
+            serviceRepository.isAlive(serviceRepositoryAddress);
+            Logger.Info("Sending message IamAlive");
         }
 
-        private static void AliveSignal()
+        public static void LoadHibernateCfg()
         {
-                repository.isAlive(serviceName);
-                Logger.Info("Alive Success");
+            var cfg = new Configuration();
+            cfg.Configure();
+            cfg.AddAssembly(typeof(Clients).Assembly);
+            new SchemaExport(cfg).Execute(true, true, false);
+
         }
     }
-
     public static class Logger
     {
         public static void Info(string Message)
